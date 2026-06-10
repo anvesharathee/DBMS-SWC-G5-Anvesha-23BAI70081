@@ -1,0 +1,59 @@
+DBMS QUESTIONS HOMEWORK SESSION 4
+
+q1.
+WITH downloads AS (
+    SELECT
+        f.date,
+        SUM(
+            CASE
+                WHEN a.paying_customer = 'yes'
+                THEN f.downloads
+                ELSE 0
+            END
+        ) AS paying_downloads,
+        SUM(
+            CASE
+                WHEN a.paying_customer = 'no'
+                THEN f.downloads
+                ELSE 0
+            END
+        ) AS non_paying_downloads
+    FROM ms_user_dimension u
+    JOIN ms_acc_dimension a
+        ON u.acc_id = a.acc_id
+    JOIN ms_download_facts f
+        ON u.user_id = f.user_id
+    GROUP BY f.date
+)
+
+SELECT
+    date,
+    non_paying_downloads,
+    paying_downloads
+FROM downloads
+WHERE non_paying_downloads > paying_downloads
+ORDER BY date;
+
+
+q2.
+WITH events AS (
+    SELECT start_time AS time_point, 1 AS cpu_change
+    FROM tasks
+
+    UNION ALL
+
+    SELECT end_time AS time_point, -1 AS cpu_change
+    FROM tasks
+),
+
+running_cpus AS (
+    SELECT
+        time_point,
+        SUM(cpu_change) OVER (
+            ORDER BY time_point, cpu_change DESC
+        ) AS cpus_in_use
+    FROM events
+)
+
+SELECT MAX(cpus_in_use) AS minimum_cpus
+FROM running_cpus;

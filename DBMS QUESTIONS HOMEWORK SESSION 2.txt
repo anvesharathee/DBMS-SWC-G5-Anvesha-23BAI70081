@@ -1,0 +1,47 @@
+DBMS QUESTIONS HOMEWORK SESSION 2
+q1.
+SELECT DISTINCT t1.user_id
+FROM amazon_transactions t1
+JOIN amazon_transactions t2
+    ON t1.user_id = t2.user_id
+    AND t1.id <> t2.id
+    AND DATEDIFF(day, t1.created_at, t2.created_at) BETWEEN 1 AND 7
+ORDER BY t1.user_id;
+
+
+q2.
+WITH searches AS (
+    SELECT
+        s.user_id,
+        s.search_id,
+        s.search_time,
+        u.user_segment,
+        MIN(c.click_time) AS first_click_time
+    FROM search_events s
+    LEFT JOIN click_events c
+        ON s.search_id = c.search_id
+        AND c.click_time >= s.search_time
+    JOIN users u
+        ON s.user_id = u.user_id
+    GROUP BY
+        s.user_id,
+        s.search_id,
+        s.search_time,
+        u.user_segment
+)
+
+SELECT
+    user_segment,
+    ROUND(
+        AVG(
+            CASE
+                WHEN first_click_time IS NOT NULL
+                 AND first_click_time <= search_time + INTERVAL '30 seconds'
+                THEN 1
+                ELSE 0
+            END
+        ) * 100,
+        2
+    ) AS search_success_rate
+FROM searches
+GROUP BY user_segment;

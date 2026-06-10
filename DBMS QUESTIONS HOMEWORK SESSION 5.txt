@@ -1,0 +1,35 @@
+DBMS QUESTIONS HOMEWORK SESSION 5
+
+q1.
+SELECT
+    EXTRACT(MONTH FROM curr.event_date) AS month,
+    COUNT(DISTINCT curr.user_id) AS monthly_active_users
+FROM user_actions curr
+JOIN user_actions prev
+    ON curr.user_id = prev.user_id
+    AND DATE_TRUNC('month', curr.event_date)
+        = DATE_TRUNC('month', prev.event_date) + INTERVAL '1 month'
+WHERE DATE_TRUNC('month', curr.event_date) = '2022-07-01'
+GROUP BY month;
+
+
+q2.
+WITH repeated_transactions AS (
+    SELECT
+        transaction_id,
+        merchant_id,
+        credit_card_id,
+        amount,
+        transaction_timestamp,
+        LAG(transaction_timestamp) OVER (
+            PARTITION BY merchant_id, credit_card_id, amount
+            ORDER BY transaction_timestamp
+        ) AS prev_transaction
+    FROM transactions
+)
+
+SELECT
+    COUNT(*) AS payment_count
+FROM repeated_transactions
+WHERE transaction_timestamp - prev_transaction
+      <= INTERVAL '10 minutes';

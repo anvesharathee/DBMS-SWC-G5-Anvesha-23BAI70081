@@ -1,0 +1,42 @@
+DBMS QUESTIONS HOMEWORK SESSION 3
+
+q1.SELECT
+    cust_id,
+    SUM(total_order_cost) AS revenue
+FROM orders
+WHERE order_date >= '2019-03-01'
+  AND order_date < '2019-04-01'
+GROUP BY cust_id
+ORDER BY revenue DESC;
+
+q2.
+WITH monthly_engagement AS (
+    SELECT
+        product_id,
+        DATE_TRUNC('month', event_date) AS month,
+        COUNT(*) AS engagement_count
+    FROM user_events
+    GROUP BY product_id, DATE_TRUNC('month', event_date)
+),
+
+momentum AS (
+    SELECT
+        product_id,
+        month,
+        engagement_count,
+        LAG(engagement_count) OVER (
+            PARTITION BY product_id
+            ORDER BY month
+        ) AS prev_month_engagement
+    FROM monthly_engagement
+)
+
+SELECT
+    product_id,
+    month,
+    engagement_count,
+    prev_month_engagement,
+    engagement_count - prev_month_engagement AS engagement_change
+FROM momentum
+WHERE prev_month_engagement IS NOT NULL
+ORDER BY engagement_change DESC;
